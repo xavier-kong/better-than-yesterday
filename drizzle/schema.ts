@@ -3,7 +3,7 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 export const users = sqliteTable('users', {
-    userId: integer('user_id').primaryKey(),
+    userId: text('user_id').primaryKey(),
     name: text('name').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
@@ -16,9 +16,9 @@ export const usersToItemsRelations = relations(users, ({ many }) => ({
 }));
 
 export const items = sqliteTable('items', {
-    userId: integer('user_id').notNull().references(() => users.userId),
+    userId: text('user_id').notNull().references(() => users.userId),
     itemId: integer('item_id').primaryKey(),
-    itemType: text('item_type', { enum: ['time', 'duration', 'amount']}).notNull(),
+    itemType: text('item_type', { enum: ['time', 'duration', 'amount', 'consistency']}).notNull(),
     itemName: text('item_name').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
@@ -42,7 +42,8 @@ export const logs = sqliteTable('logs', {
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().default(sql`CURRENT_TIMESTAMP`),
     itemId: integer('item_id').notNull().references(() => items.itemId),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-    value: integer('amount')
+    value: integer('amount'),
+    logDate: integer('log_date', { mode: 'timestamp_ms' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const logsToItemsRelations = relations(logs, ({ one }) => ({

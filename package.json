@@ -11,6 +11,7 @@
     "db studio": "drizzle-kit studio — port 3333 NODE_ENV=production"
   },
   "dependencies": {
+    "@clerk/nextjs": "^4.23.3",
     "@libsql/client": "^0.3.2",
     "@t3-oss/env-nextjs": "^0.6.0",
     "@tanstack/react-query": "^4.29.25",
