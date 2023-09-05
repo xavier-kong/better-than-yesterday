@@ -1,4 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
+import { boolean } from 'drizzle-orm/mysql-core';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
@@ -21,6 +22,7 @@ export const items = sqliteTable('items', {
     itemType: text('item_type', { enum: ['time', 'duration', 'amount', 'consistency']}).notNull(),
     itemName: text('item_name').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+    direction: text('direction', { enum: ['increase', 'decrease']})
 });
 
 export const itemsToLogsRelations = relations(items, ({ many }) => ({
