@@ -24,10 +24,20 @@ import {
 } from "../components/ui/select"
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group"
 
+const itemTypes = ['time', 'duration', 'amount', 'consistency'] as const;
+
+type ItemType = typeof itemTypes[number];
+
+const directions = ['increase', 'decrease'] as const;
+
+type Directions = typeof directions[number];
+
 export default function Home() {
   const hello = api.example.hello.useQuery({ text: "from tRPC" });
   const { isLoaded, isSignedIn, userId } = useAuth();
   const [formItemName, setFormItemName] = useState<string>('');
+  const [selectedItemType, setSelectedItemType] = useState<ItemType>('time');
+  const [selectedDirection, setSelectedDirection] = useState<Directions>('increase');
   const userItemsQuery = api.user.fetchUserData.useQuery();
 
   if (!isLoaded) {
@@ -83,10 +93,14 @@ export default function Home() {
                       <SelectValue placeholder="Select a type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="time">Time</SelectItem>
-                      <SelectItem value="duration">Duration</SelectItem>
-                      <SelectItem value="amount">Amount</SelectItem>
-                      <SelectItem value="consistency">consistency</SelectItem>
+                      {
+                        itemTypes.map((itemType) => (
+                          <SelectItem value={itemType} key={itemType} onSelect={() => setSelectedItemType(itemType)}
+                          >
+                            {itemType.charAt(0).toUpperCase() + itemType.slice(1)}
+                          </SelectItem>
+                        ))
+                      }
                     </SelectContent>
                   </Select>
                 </div>
@@ -96,14 +110,14 @@ export default function Home() {
                     Direction
                   </Label>
                   <RadioGroup defaultValue="increase" className="flex flex-row col-span-3 ml-2">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="increase" id="increase" />
-                      <Label htmlFor="increase">Increase</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="decrease" id="decrease" />
-                      <Label htmlFor="decrease">Decrease</Label>
-                    </div>
+                    {
+                      directions.map((dir) => (
+                        <div className="flex items-center space-x-2" key={dir} onSelect={() => setSelectedDirection(dir)}>
+                          <RadioGroupItem value={dir} id={dir} />
+                          <Label htmlFor={dir}>{dir.charAt(0).toUpperCase() + dir.slice(1)}</Label>
+                        </div>
+                      ))
+                    }
                   </RadioGroup>
                 </div>
               </div>
