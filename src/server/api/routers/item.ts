@@ -6,16 +6,15 @@ import { TRPCError } from "@trpc/server";
 import { users, items, logs } from '../../../../drizzle/schema';
 import { eq, between } from "drizzle-orm";
 
-type ItemType = 'time' | 'duration' | 'amount' | 'consistency';
-
 export const itemRouter = createTRPCRouter({
     createItem: privateProcedure
-    .input(z.object({ itemType: z.enum(['time', 'duration', 'amount', 'consistency']), itemName: z.string() }))
+    .input(z.object({ itemType: z.enum(['time', 'duration', 'amount', 'consistency']), itemName: z.string(), direction: z.enum(['increase', 'decrease']) }))
     .mutation(async ({ ctx, input }) => {
         await ctx.db.insert(items).values({
             userId: ctx.userId,
             itemType: input.itemType,
             itemName: input.itemName,
+            direction: input.direction,
             createdAt: new Date()
         })
     })

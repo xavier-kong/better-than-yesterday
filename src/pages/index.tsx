@@ -14,7 +14,7 @@ import {
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "../components/ui/select"
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group"
+import { useToast } from "~/components/ui/use-toast";
 
 const itemTypes = ['time', 'duration', 'amount', 'consistency'] as const;
 
@@ -33,12 +34,33 @@ const directions = ['increase', 'decrease'] as const;
 type Directions = typeof directions[number];
 
 export default function Home() {
-  const hello = api.example.hello.useQuery({ text: "from tRPC" });
   const { isLoaded, isSignedIn, userId } = useAuth();
   const [formItemName, setFormItemName] = useState<string>('');
-  const [selectedItemType, setSelectedItemType] = useState<ItemType>('time');
+  const [selectedItemType, setSelectedItemType] = useState<ItemType | null>();
   const [selectedDirection, setSelectedDirection] = useState<Directions>('increase');
   const userItemsQuery = api.user.fetchUserData.useQuery();
+  const createItemsMutation = api.item.createItem.useMutation();
+  const [addItemDialogOpen, setAddItemDialogOpen] = useState<boolean>(false);
+  const [addItemError, setAddItemError] = useState<string>('');
+  const [addItemLoading, setAddItemLoading] = useState<boolean>(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (createItemsMutation.isSuccess) {
+      setAddItemDialogOpen(false);
+      setAddItemLoading(false);
+      setFormItemName('');
+      setSelectedItemType(null);
+      setSelectedDirection('increase');
+      setAddItemError('');
+      toast({
+        description: 'Item has been created successfully.',
+      })
+    } else if (createItemsMutation.isError) {
+      setAddItemLoading(false);
+      setAddItemError(createItemsMutation.error.message);
+    }
+  }, [createItemsMutation.isLoading, createItemsMutation.isSuccess, createItemsMutation.isError, createItemsMutation.error?.message, toast]);
 
   if (!isLoaded) {
     return <Spinner />;
@@ -52,7 +74,35 @@ export default function Home() {
     return <Spinner />;
   }
 
+
   const userItems = userItemsQuery.data?.items;
+
+  const handleAddItem = () => {
+    if (!formItemName) {
+      setAddItemError('Please enter a name.');
+      return;
+    }
+
+    if (!selectedItemType) {
+      setAddItemError('Please select item type.');
+      return;
+    }
+
+    const itemExists = userItems?.some(item => item.itemName.toLowerCase() === formItemName.toLowerCase());
+
+    if (itemExists) {
+      setAddItemError('Name already taken. Try another.');
+      return;
+    }
+
+    createItemsMutation.mutate({
+      itemType: selectedItemType,
+      itemName: formItemName,
+      direction: selectedDirection
+    })
+
+    setAddItemLoading(true);
+  }
 
 
   return (
@@ -64,7 +114,7 @@ export default function Home() {
       </Head>
       <main className="flex min-h-screen items-center justify-center">
         <div className="justify-center items-center flex container">
-          <Dialog>
+          <Dialog open={addItemDialogOpen} onOpenChange={setAddItemDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">Add Item</Button>
             </DialogTrigger>
@@ -123,8 +173,14 @@ export default function Home() {
               </div>
 
               <DialogFooter>
-                <Button type="button">Cancel</Button>
-                <Button type="submit">Add</Button>
+                <div className="flex flex-row justify-between w-full items-center">
+                  <div>
+                    <p className="text-red-500">{addItemError}</p>
+                  </div>
+                  <Button type="submit" onClick={() => handleAddItem()} className="justify-center" disabled={addItemLoading}>
+                    {addItemLoading ? <Spinner /> : 'Add'}
+                  </Button>
+                </div>
               </DialogFooter>
             </DialogContent>
           </Dialog>
