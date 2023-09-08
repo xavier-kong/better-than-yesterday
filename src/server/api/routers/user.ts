@@ -3,7 +3,7 @@ import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 //import ratelimit from "../rateLimiter";
-import { users, items, logs } from '../../../../drizzle/schema';
+import { users, items, logs, itemsToLogsRelations } from '../../../../drizzle/schema';
 import { eq, between } from "drizzle-orm";
 
 export const userRouter = createTRPCRouter({
@@ -27,12 +27,11 @@ export const userRouter = createTRPCRouter({
             columns: {
                 userId: false,
                 createdAt: false,
-                itemId: false
             },
             with: {
                 logs: true,
             }
-        })
+        });
 
         return {
             items: dataQuery

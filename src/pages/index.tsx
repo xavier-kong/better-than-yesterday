@@ -53,6 +53,11 @@ type Directions = typeof directions[number];
 
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
+interface HandleLogBody {
+  itemType: ItemType;
+  itemId: number;
+};
+
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Items = RouterOutput["user"]["fetchUserData"]["items"];
 
@@ -82,13 +87,13 @@ function ItemNameIcon({ itemType }: {itemType: ItemType}) {
   );
 }
 
-function ItemLogger({ itemType, handleLog }: {itemType: ItemType; handleLog: (itemType: ItemType) => void }) {
+function ItemLogger({ itemType, handleLog, itemId }: {itemType: ItemType; handleLog: (body: HandleLogBody) => void; itemId: number }) {
   if (itemType === 'duration') {
 
   } else if (itemType === 'consistency') {
-
+    return <Button className="h-6 w-21" onClick={() => handleLog({ itemType, itemId })}>Mark Done</Button>
   } else if (itemType === 'time') {
-    return <Button className="h-6 w-21" onClick={() => handleLog(itemType)}>Log Time</Button>
+    return <Button className="h-6 w-21" onClick={() => handleLog({ itemType, itemId })}>Log Time</Button>
   } else if (itemType === 'amount') {
 
   }
@@ -99,13 +104,14 @@ export default function Home() {
   const [formItemName, setFormItemName] = useState<string>('');
   const [selectedItemType, setSelectedItemType] = useState<ItemType | undefined>();
   const [selectedDirection, setSelectedDirection] = useState<Directions>('increase');
-  const userItemsQuery = api.user.fetchUserData.useQuery();
-  const createItemsMutation = api.item.createItem.useMutation();
   const [addItemDialogOpen, setAddItemDialogOpen] = useState<boolean>(false);
   const [addItemError, setAddItemError] = useState<string>('');
   const [addItemLoading, setAddItemLoading] = useState<boolean>(false);
   const [items, setItems] = useState<Items>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const userItemsQuery = api.user.fetchUserData.useQuery();
+  const createItemsMutation = api.item.createItem.useMutation();
+  const createLogMutation = api.log.createItemLog.useMutation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -116,6 +122,12 @@ export default function Home() {
       toast({
         description: 'Item has been created successfully.',
       })
+      if (createItemsMutation.data[0]) {
+        const newItem = createItemsMutation.data[0];
+        const currItems = items.slice();
+        currItems.push(newItem);
+        setItems(currItems);
+      }
     } else if (createItemsMutation.isError) {
       setAddItemLoading(false);
       setAddItemError(createItemsMutation.error.message);
@@ -131,6 +143,13 @@ export default function Home() {
       setItems(userItems);
     }
   }, [userItemsQuery.isLoading, userItemsQuery.isSuccess, userItemsQuery.data?.items]);
+
+  useEffect(() => {
+    if (createLogMutation.isSuccess) {
+      setLoading(false);
+      console.log(createLogMutation.data);
+    }
+  }, [createLogMutation.isLoading, createLogMutation.isSuccess, createLogMutation.isError]);
 
   if (!isLoaded || loading) {
     return <Spinner />;
@@ -165,21 +184,22 @@ export default function Home() {
       return;
     }
 
-    const newItem = {
+    createItemsMutation.mutate({
       itemType: selectedItemType,
       itemName: formItemName,
       direction: selectedDirection
-    };
-
-    createItemsMutation.mutate(newItem)
-
-    const currItems = items;
-    currItems.push(newItem)
+    })
 
     setAddItemLoading(true);
   }
 
-  const handleLog = (itemType: ItemType) => {
+  const handleLog = ({ itemType, itemId }: HandleLogBody) => {
+    setLoading(true);
+    if (itemType === 'time' || itemType === 'consistency') {
+      createLogMutation.mutate({
+        itemType, itemId
+      });
+    }
 
   }
 
@@ -204,14 +224,14 @@ export default function Home() {
             <TableBody>
               {
                 items?.map((item) => (
-                  <TableRow key={item.itemName}>
+                  <TableRow key={item.itemId}>
                     <TableCell className="flex flex-row gap-4">
                       <div className="flex-1">{item.itemName}</div>
                       <ItemNameIcon itemType={item.itemType} />
                     </TableCell>
                     <TableCell></TableCell>
                     <TableCell>
-                      <ItemLogger itemType={item.itemType} handleLog={handleLog} />
+                      <ItemLogger itemType={item.itemType} handleLog={handleLog} itemId={item.itemId} />
                     </TableCell>
                     <TableCell></TableCell>
                   </TableRow>

@@ -45,7 +45,6 @@ export const logs = sqliteTable('logs', {
     itemId: integer('item_id').notNull().references(() => items.itemId),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().default(sql`CURRENT_TIMESTAMP`),
     value: integer('amount'),
-    logDate: integer('log_date', { mode: 'timestamp_ms' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const logsToItemsRelations = relations(logs, ({ one }) => ({
