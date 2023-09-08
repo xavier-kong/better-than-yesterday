@@ -35,6 +35,13 @@ import {
 } from "../components/ui/table"
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "~/server/api/root";
+import { ClockIcon, Crosshair, TimerIcon, TargetIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../components/ui/tooltip'
 
 const itemTypes = ['time', 'duration', 'amount', 'consistency'] as const;
 
@@ -48,6 +55,39 @@ const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Items = RouterOutput["user"]["fetchUserData"]["items"];
+
+function ItemNameIcon({ itemType, direction }: {itemType: ItemType; direction?: Directions | null}) {
+  let color = 'green';
+  if (direction === 'decrease') {
+    color = 'red';
+  } else if (itemType === 'consistency') {
+    color = 'white';
+  }
+  const size = 24;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          {
+            itemType === 'time'
+              ?  <ClockIcon color={color} size={size} />
+              : itemType === 'duration' 
+                ?  <TimerIcon color={color} size={size} />
+                : itemType === 'amount'
+                  ? <TargetIcon color={color} size={size} />
+                  :  <Crosshair color={color} size={size} />
+          }
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="capitalize">{itemType} {itemType === 'consistency' ? null : direction}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+
+
+}
 
 export default function Home() {
   const { isLoaded, isSignedIn, userId } = useAuth();
@@ -146,7 +186,7 @@ export default function Home() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-24">Item</TableHead>
+                <TableHead className="w-48">Item</TableHead>
                 <TableHead>Yesterday</TableHead>
                 <TableHead>Today</TableHead>
                 <TableHead className="text-right">Difference</TableHead>
@@ -156,7 +196,10 @@ export default function Home() {
               {
                 items?.map((item) => (
                   <TableRow key={item.itemName}>
-                    <TableCell>{item.itemName}</TableCell>
+                    <TableCell className="flex flex-row gap-4">
+                      <div className="flex-1">{item.itemName}</div>
+                      <ItemNameIcon itemType={item.itemType} direction={item.direction} />
+                    </TableCell>
                     <TableCell></TableCell>
                     <TableCell></TableCell>
                     <TableCell></TableCell>
