@@ -56,13 +56,8 @@ const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Items = RouterOutput["user"]["fetchUserData"]["items"];
 
-function ItemNameIcon({ itemType, direction }: {itemType: ItemType; direction?: Directions | null}) {
-  let color = 'green';
-  if (direction === 'decrease') {
-    color = 'red';
-  } else if (itemType === 'consistency') {
-    color = 'white';
-  }
+function ItemNameIcon({ itemType }: {itemType: ItemType}) {
+  const color= 'white'
   const size = 24;
 
   return (
@@ -80,13 +75,23 @@ function ItemNameIcon({ itemType, direction }: {itemType: ItemType; direction?: 
           }
         </TooltipTrigger>
         <TooltipContent>
-          <p className="capitalize">{itemType} {itemType === 'consistency' ? null : direction}</p>
+          <p className="capitalize">{itemType}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
+}
 
+function ItemLogger({ itemType, handleLog }: {itemType: ItemType; handleLog: (itemType: ItemType) => void }) {
+  if (itemType === 'duration') {
 
+  } else if (itemType === 'consistency') {
+
+  } else if (itemType === 'time') {
+    return <Button className="h-6 w-21" onClick={() => handleLog(itemType)}>Log Time</Button>
+  } else if (itemType === 'amount') {
+
+  }
 }
 
 export default function Home() {
@@ -174,6 +179,10 @@ export default function Home() {
     setAddItemLoading(true);
   }
 
+  const handleLog = (itemType: ItemType) => {
+
+  }
+
   return (
     <>
       <Head>
@@ -188,7 +197,7 @@ export default function Home() {
               <TableRow>
                 <TableHead className="w-48">Item</TableHead>
                 <TableHead>Yesterday</TableHead>
-                <TableHead>Today</TableHead>
+                <TableHead className="w-36">Today</TableHead>
                 <TableHead className="text-right">Difference</TableHead>
               </TableRow>
             </TableHeader>
@@ -198,10 +207,12 @@ export default function Home() {
                   <TableRow key={item.itemName}>
                     <TableCell className="flex flex-row gap-4">
                       <div className="flex-1">{item.itemName}</div>
-                      <ItemNameIcon itemType={item.itemType} direction={item.direction} />
+                      <ItemNameIcon itemType={item.itemType} />
                     </TableCell>
                     <TableCell></TableCell>
-                    <TableCell></TableCell>
+                    <TableCell>
+                      <ItemLogger itemType={item.itemType} handleLog={handleLog} />
+                    </TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 ))
