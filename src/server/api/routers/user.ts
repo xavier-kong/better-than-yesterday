@@ -24,8 +24,13 @@ export const userRouter = createTRPCRouter({
 
         const dataQuery = await ctx.db.query.items.findMany({
             where: eq(items.userId, ctx.userId),
+            columns: {
+                userId: false,
+                createdAt: false,
+                itemId: false
+            },
             with: {
-                logs: true
+                logs: true,
             }
         })
 

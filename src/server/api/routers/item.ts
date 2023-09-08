@@ -8,7 +8,7 @@ import { eq, between } from "drizzle-orm";
 
 export const itemRouter = createTRPCRouter({
     createItem: privateProcedure
-    .input(z.object({ itemType: z.enum(['time', 'duration', 'amount', 'consistency']), itemName: z.string(), direction: z.enum(['increase', 'decrease']) }))
+    .input(z.object({ itemType: z.enum(['time', 'duration', 'amount', 'consistency']), itemName: z.string(), direction: z.enum(['increase', 'decrease']).optional() }))
     .mutation(async ({ ctx, input }) => {
         await ctx.db.insert(items).values({
             userId: ctx.userId,
