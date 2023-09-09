@@ -87,9 +87,30 @@ function ItemNameIcon({ itemType }: {itemType: ItemType}) {
   );
 }
 
-function ItemLogger({ itemType, handleLog, itemId }: {itemType: ItemType; handleLog: (body: HandleLogBody) => void; itemId: number }) {
-  if (itemType === 'duration') {
+function interconvertTimeString(value: number | string) {
+  if (typeof value === 'number') {
+    const totalMinutes = Math.floor(value / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}:${minutes}`;
+  } else if (typeof value === 'string') {
+    const parts = value.split(':');
+    if (!parts[0] || !parts[1]) { return 0; }
+    const hours = parseInt(parts[0]);
+    const minutes = parseInt(parts[1]);
+    return (hours * 60 * 60) + (minutes * 60);
+  }
+}
 
+function ItemLogger({ itemType, handleLog, itemId }: {itemType: ItemType; handleLog: (body: HandleLogBody) => void; itemId: number }) {
+  const [logDurationSecs, setLogDurationSecs] = useState<number>(0);
+  if (itemType === 'duration') {
+    return <Input type="time" value={interconvertTimeString(logDurationSecs)} onChange={e => {
+      const timeStr = e.currentTarget.value;
+      const secs = interconvertTimeString(timeStr) as number;
+      setLogDurationSecs(secs);
+      handleLog({ itemType, itemId, loggedSecs: secs });
+    }} />
   } else if (itemType === 'consistency') {
     return <Button className="h-6 w-21" onClick={() => handleLog({ itemType, itemId })}>Mark Done</Button>
   } else if (itemType === 'time') {
