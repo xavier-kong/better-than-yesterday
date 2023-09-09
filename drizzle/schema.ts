@@ -1,4 +1,4 @@
-import { relations, sql } from 'drizzle-orm';
+import { InferModel, relations, sql } from 'drizzle-orm';
 import { boolean } from 'drizzle-orm/mysql-core';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -25,6 +25,8 @@ export const items = sqliteTable('items', {
     direction: text('direction', { enum: ['increase', 'decrease']})
 });
 
+export type Item = typeof items.$inferSelect;
+
 export const itemsToLogsRelations = relations(items, ({ many }) => ({
     logs: many(logs),
 }));
@@ -46,6 +48,8 @@ export const logs = sqliteTable('logs', {
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().default(sql`CURRENT_TIMESTAMP`),
     value: integer('amount'),
 });
+
+export type Log = typeof logs.$inferSelect;
 
 export const logsToItemsRelations = relations(logs, ({ one }) => ({
     item: one(items, {

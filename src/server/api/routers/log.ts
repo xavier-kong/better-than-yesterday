@@ -3,7 +3,7 @@ import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 //import ratelimit from "../rateLimiter";
-import { users, items, logs } from '../../../../drizzle/schema';
+import { users, items, logs, Log } from '../../../../drizzle/schema';
 import { eq, between } from "drizzle-orm";
 
 const itemTypes = ['time', 'duration', 'amount', 'consistency'] as const;
@@ -13,34 +13,38 @@ export const logRouter = createTRPCRouter({
     .input(z.object({ 
         itemId: z.number(), 
         itemType: z.enum(itemTypes),
+        loggedSecs: z.number().optional()
     }))
     .mutation(async ({ ctx, input }) => {
         const currDate = new Date();
-        if (input.itemType === 'time') {
-            const res = await ctx.db.insert(logs).values({
-                createdAt: currDate,
-                itemId: input.itemId,
-                updatedAt: currDate,
-            }).returning({
+        const body = {
+            createdAt: currDate,
+            itemId: input.itemId,
+            updatedAt: currDate,
+        } as Log;
+
+        if (input.itemType === 'consistency') {
+            body.value = 1;
+        } else if (input.itemType === 'duration') {
+            if (!input.loggedSecs) {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: 'Missing logged duration' });
+            }
+
+            body.value = input.loggedSecs;
+        }
+
+        const res = await ctx.db
+            .insert(logs).values(body)
+            .returning({
                 createdAt: logs.createdAt,
                 itemId: logs.itemId,
                 updatedAt: logs.updatedAt,
-                logId: logs.logId
+                logId: logs.logId,
+                amount: logs.value
             });
 
-            return res;
-        } else if (input.itemType === 'consistency') {
-            const res = await ctx.db.insert(logs).values({
-                createdAt: currDate,
-                itemId: input.itemId,
-                updatedAt: currDate,
-                value: 1
-            }).returning({
-                createdAt: logs.createdAt,
-                itemId: logs.itemId,
-                updatedAt: logs.updatedAt,
-                logId: logs.logId
-            });
-        }
+        return res;
+
+
     })
 });

@@ -35,7 +35,7 @@ import {
 } from "../components/ui/table"
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "~/server/api/root";
-import { ClockIcon, Crosshair, TimerIcon, TargetIcon } from "lucide-react";
+import { ClockIcon, Crosshair, TimerIcon, TargetIcon, CheckCircle2 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -56,10 +56,12 @@ const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 interface HandleLogBody {
   itemType: ItemType;
   itemId: number;
+  loggedSecs?: number;
 };
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Items = RouterOutput["user"]["fetchUserData"]["items"];
+type SingleItem = Items[number];
 
 function ItemNameIcon({ itemType }: {itemType: ItemType}) {
   const color= 'white'
@@ -92,7 +94,7 @@ function interconvertTimeString(value: number | string) {
     const totalMinutes = Math.floor(value / 60);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    return `${hours}:${minutes}`;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   } else if (typeof value === 'string') {
     const parts = value.split(':');
     if (!parts[0] || !parts[1]) { return 0; }
@@ -102,21 +104,48 @@ function interconvertTimeString(value: number | string) {
   }
 }
 
-function ItemLogger({ itemType, handleLog, itemId }: {itemType: ItemType; handleLog: (body: HandleLogBody) => void; itemId: number }) {
+function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: HandleLogBody) => void; }) {
   const [logDurationSecs, setLogDurationSecs] = useState<number>(0);
+  const { itemType, itemId, logs } = item;
   if (itemType === 'duration') {
-    return <Input type="time" value={interconvertTimeString(logDurationSecs)} onChange={e => {
-      const timeStr = e.currentTarget.value;
-      const secs = interconvertTimeString(timeStr) as number;
-      setLogDurationSecs(secs);
-      handleLog({ itemType, itemId, loggedSecs: secs });
-    }} />
-  } else if (itemType === 'consistency') {
-    return <Button className="h-6 w-21" onClick={() => handleLog({ itemType, itemId })}>Mark Done</Button>
-  } else if (itemType === 'time') {
-    return <Button className="h-6 w-21" onClick={() => handleLog({ itemType, itemId })}>Log Time</Button>
-  } else if (itemType === 'amount') {
+    return <Input type="time" value={interconvertTimeString(logDurationSecs)} 
+      onBlur={() => handleLog({ itemType, itemId, loggedSecs: logDurationSecs })}
+      onChange={e => {
+        const timeStr = e.currentTarget.value;
+        const secs = interconvertTimeString(timeStr) as number;
+        setLogDurationSecs(secs);
+      }} />
 
+  } else if (itemType === 'consistency') {
+    return (
+      <div>
+        {
+          Object.keys(logs.today).length > 0 ? 
+            <div className="flex-row flex justify-center items-center">
+              <div className="flex flex-1 justify-center">Done</div>
+              <div className="flex flex-1 justify-center"><CheckCircle2 /></div>
+            </div>
+            : <Button className="h-6 w-28" onClick={() => handleLog({ itemType, itemId })}>Mark Done</Button>
+        }
+      </div>
+    );
+
+  } else if (itemType === 'time') {
+    return <Button className="h-6 w-28" onClick={() => handleLog({ itemType, itemId })}>Log Time</Button>
+
+  } else if (itemType === 'amount') {
+    return (
+      <div className="flex flex-row w-28">
+        <div className="flex flex-1 justify-center items-center">
+          <p>
+            {
+              logs?.today?.amount ? 2 : 3
+            }
+          </p>
+        </div>
+        <div className="flex flex-1 justify-center items-center"><Button className="h-6">Add</Button></div>
+      </div>
+    );  
   }
 }
 
@@ -146,7 +175,7 @@ export default function Home() {
       if (createItemsMutation.data[0]) {
         const newItem = createItemsMutation.data[0];
         const currItems = items.slice();
-        currItems.push(newItem);
+        currItems.push({ ...newItem, logs: { ytd: {}, today: {} } });
         setItems(currItems);
       }
     } else if (createItemsMutation.isError) {
@@ -166,9 +195,25 @@ export default function Home() {
   }, [userItemsQuery.isLoading, userItemsQuery.isSuccess, userItemsQuery.data?.items]);
 
   useEffect(() => {
-    if (createLogMutation.isSuccess) {
+    if (createLogMutation.isSuccess && createLogMutation.data[0]) {
+      const currItems = items.slice();
+      const mutRes = createLogMutation.data[0];
+      for (let i = 0; i < currItems.length; i++) {
+        const item = { ...currItems[i] } as SingleItem;
+        if (item?.itemId === mutRes.itemId && item.logs?.today && mutRes) {
+          item.logs.today = mutRes;
+          currItems[i] = item;
+        }
+      }
+      setItems(currItems);
       setLoading(false);
-      console.log(createLogMutation.data);
+    } else if (createLogMutation.isError) {
+      setLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "There was a problem with your request.",
+      });
     }
   }, [createLogMutation.isLoading, createLogMutation.isSuccess, createLogMutation.isError]);
 
@@ -214,11 +259,22 @@ export default function Home() {
     setAddItemLoading(true);
   }
 
-  const handleLog = ({ itemType, itemId }: HandleLogBody) => {
+  const handleLog = ({ itemType, itemId, loggedSecs }: HandleLogBody) => {
     setLoading(true);
     if (itemType === 'time' || itemType === 'consistency') {
       createLogMutation.mutate({
         itemType, itemId
+      });
+    } else if (itemType === 'duration') {
+      if (!loggedSecs) {
+        toast({
+          variant: "destructive",
+          title: "Missing Duration",
+          description: "There was a problem with your request.",
+        })
+      }
+      createLogMutation.mutate({
+        itemType, itemId, loggedSecs
       });
     }
 
@@ -252,7 +308,7 @@ export default function Home() {
                     </TableCell>
                     <TableCell></TableCell>
                     <TableCell>
-                      <ItemLogger itemType={item.itemType} handleLog={handleLog} itemId={item.itemId} />
+                      <ItemLogger item={item} handleLog={handleLog} />
                     </TableCell>
                     <TableCell></TableCell>
                   </TableRow>
