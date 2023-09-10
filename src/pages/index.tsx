@@ -105,17 +105,82 @@ function interconvertTimeString(value: number | string) {
   }
 }
 
+function ItemDiff({ item }: { item: SingleItem }) {
+  if (!item.logs.ytd || !item.logs.today) {
+    return <div>N/A</div>;
+  }
+
+  if (item.itemType === 'time') {
+
+  } else if (item.itemType === 'amount') {
+
+    if (!item.logs.ytd.value || !item.logs.today.value) {
+      return <div>N/A</div>;
+    }
+
+    const diff = item.logs.today.value - item.logs.ytd.value;
+
+    const color = (item.direction === 'increase' ? (diff > 0) : (diff < 0)) ? 'green-500' : diff === 0 ? 'white' : 'red-500';
+
+    return <div className={`text-${color}`}>{diff}</div>
+
+  } else if (item.itemType === 'duration') {
+
+    if (!item.logs.ytd.value || !item.logs.today.value) {
+      return <div>N/A</div>;
+    }
+
+    const diff = item.logs.today.value - item.logs.ytd.value;
+
+    const color = (item.direction === 'increase' ? (diff > 0) : (diff < 0)) ? 'green-500' : diff === 0 ? 'white' : 'red-500';
+
+    return <div className={`text-${color}`}>{interconvertTimeString(Math.abs(diff))}</div>
+
+  } else if (item.itemType === 'consistency') {
+
+    if (!item.logs.today.value || !item.logs.ytd.value) {
+
+    }
+  }
+}
+
 function ItemYtd({ item }: { item: SingleItem }) {
-  const { itemType, itemId, logs } = item;
+  const { itemType, logs } = item;
+
+  if (!logs.ytd || Object.keys(logs?.ytd).length === 0) {
+    return <div>N/A</div>;
+  }
 
   if (itemType === 'duration') {
-
+    if (!logs.ytd.value) {
+      return <div>N/A</div>;
+    }
+    return <div>{interconvertTimeString(logs.ytd.value)}</div>
   } else if (itemType === 'amount') {
-
+    if (!logs.ytd.value) {
+      return <div>N/A</div>;
+    }
+    return <div>{logs.ytd.value}</div>;
   } else if (itemType === 'time') {
-
+    if (!logs.ytd.createdAt) {
+      return <div>N/A</div>;
+    }
+    return (
+      <div className="flex-row flex justify-center items-center">
+        <div className="flex flex-1">{logs.ytd.createdAt.toLocaleTimeString()}</div>
+        <div className="flex"><CheckCircle2 color="green" /></div>
+      </div>
+    );
   } else if (itemType === 'consistency') {
-
+    if (!logs.ytd.createdAt) {
+      return <div>N/A</div>;
+    }
+    return (
+      <div className="flex-row flex justify-center items-center">
+        <div className="flex flex-1">Done</div>
+        <div className="flex"><CheckCircle2 color="green" /></div>
+      </div>
+    );
   }
   return <div></div>
 }
@@ -134,7 +199,7 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
 
   if (itemType === 'duration') {
     return (
-      <div>
+      <div className='h-6'>
         <Input type="time" value={interconvertTimeString(logDurationSecs)} 
           onBlur={() => handleLog({ itemType, itemId, value: logDurationSecs, logId: logs.today?.logId })}
           onChange={e => {
@@ -238,7 +303,7 @@ export default function Home() {
       const mutRes = createLogMutation.data[0];
       for (let i = 0; i < currItems.length; i++) {
         const item = { ...currItems[i] } as SingleItem;
-        if (item?.itemId === mutRes?.itemId && item.logs?.today && mutRes) {
+        if (item?.itemId === mutRes?.itemId && mutRes) {
           item.logs.today = mutRes;
           currItems[i] = item;
         }
@@ -325,8 +390,8 @@ export default function Home() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-48">Item</TableHead>
-                <TableHead>Yesterday</TableHead>
+                <TableHead className="w-40">Item</TableHead>
+                <TableHead className="w-36">Yesterday</TableHead>
                 <TableHead className="w-36">Today</TableHead>
                 <TableHead className="text-right">Difference</TableHead>
               </TableRow>
@@ -345,7 +410,9 @@ export default function Home() {
                     <TableCell>
                       <ItemLogger item={item} handleLog={handleLog} />
                     </TableCell>
-                    <TableCell></TableCell>
+                    <TableCell>
+                      <ItemDiff item={item} />
+                    </TableCell>
                   </TableRow>
                 ))
               }
