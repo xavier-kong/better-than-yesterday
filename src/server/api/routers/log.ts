@@ -13,38 +13,59 @@ export const logRouter = createTRPCRouter({
     .input(z.object({ 
         itemId: z.number(), 
         itemType: z.enum(itemTypes),
-        loggedSecs: z.number().optional()
+        value: z.number().optional(),
+        logId: z.number().optional()
     }))
     .mutation(async ({ ctx, input }) => {
         const currDate = new Date();
-        const body = {
-            createdAt: currDate,
-            itemId: input.itemId,
-            updatedAt: currDate,
-        } as Log;
-
-        if (input.itemType === 'consistency') {
-            body.value = 1;
-        } else if (input.itemType === 'duration') {
-            if (!input.loggedSecs) {
-                throw new TRPCError({ code: 'BAD_REQUEST', message: 'Missing logged duration' });
+        if (input.logId) { // updates
+            if (!input.value) {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: 'Missing logged amount' });
             }
 
-            body.value = input.loggedSecs;
+            const body = { updatedAt: currDate, value: input.value } as Log;
+
+            const res = await ctx.db.update(logs)
+                .set(body)
+                .where(eq(logs.logId, input.logId))
+                .returning({ 
+                    itemId: logs.itemId,
+                    logId: logs.logId,
+                    createdAt: logs.createdAt,
+                    updatedAt: logs.updatedAt,
+                    value: logs.value,
+                })
+
+            return res;
+        } else { // make new logs
+            const body = {
+                createdAt: currDate,
+                itemId: input.itemId,
+                updatedAt: currDate,
+            } as Log;
+
+            // no need to handle case where itemType is time since its same as body
+            if (input.itemType === 'consistency' || input.itemType === 'amount') {
+                body.value = 1;
+            } else if (input.itemType === 'duration') {
+                if (!input.value) {
+                    throw new TRPCError({ code: 'BAD_REQUEST', message: 'Missing logged duration' });
+                }
+
+                body.value = input.value;
+            }
+
+            const res = await ctx.db
+                .insert(logs).values(body)
+                .returning({
+                    createdAt: logs.createdAt,
+                    itemId: logs.itemId,
+                    updatedAt: logs.updatedAt,
+                    logId: logs.logId,
+                    value: logs.value
+                });
+
+            return res;
         }
-
-        const res = await ctx.db
-            .insert(logs).values(body)
-            .returning({
-                createdAt: logs.createdAt,
-                itemId: logs.itemId,
-                updatedAt: logs.updatedAt,
-                logId: logs.logId,
-                amount: logs.value
-            });
-
-        return res;
-
-
     })
 });

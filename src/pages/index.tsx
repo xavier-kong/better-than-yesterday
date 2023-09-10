@@ -56,7 +56,8 @@ const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 interface HandleLogBody {
   itemType: ItemType;
   itemId: number;
-  loggedSecs?: number;
+  value?: number;
+  logId?: number;
 };
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
@@ -104,26 +105,53 @@ function interconvertTimeString(value: number | string) {
   }
 }
 
+function ItemYtd({ item }: { item: SingleItem }) {
+  const { itemType, itemId, logs } = item;
+
+  if (itemType === 'duration') {
+
+  } else if (itemType === 'amount') {
+
+  } else if (itemType === 'time') {
+
+  } else if (itemType === 'consistency') {
+
+  }
+  return <div></div>
+}
+
 function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: HandleLogBody) => void; }) {
   const [logDurationSecs, setLogDurationSecs] = useState<number>(0);
   const { itemType, itemId, logs } = item;
-  if (itemType === 'duration') {
-    return <Input type="time" value={interconvertTimeString(logDurationSecs)} 
-      onBlur={() => handleLog({ itemType, itemId, loggedSecs: logDurationSecs })}
-      onChange={e => {
-        const timeStr = e.currentTarget.value;
-        const secs = interconvertTimeString(timeStr) as number;
-        setLogDurationSecs(secs);
-      }} />
 
+  useEffect(() => {
+    if (itemType === 'duration') {
+      if (logs.today?.value) {
+        setLogDurationSecs(logs.today.value);
+      } 
+    }
+  }, [logs.today?.value]);
+
+  if (itemType === 'duration') {
+    return (
+      <div>
+        <Input type="time" value={interconvertTimeString(logDurationSecs)} 
+          onBlur={() => handleLog({ itemType, itemId, value: logDurationSecs, logId: logs.today?.logId })}
+          onChange={e => {
+            const timeStr = e.currentTarget.value;
+            const secs = interconvertTimeString(timeStr) as number;
+            setLogDurationSecs(secs);
+          }} />
+      </div>
+    )
   } else if (itemType === 'consistency') {
     return (
       <div>
         {
-          Object.keys(logs.today).length > 0 ? 
+          logs.today && Object.keys(logs.today).length > 0 ? 
             <div className="flex-row flex justify-center items-center">
-              <div className="flex flex-1 justify-center">Done</div>
-              <div className="flex flex-1 justify-center"><CheckCircle2 /></div>
+              <div className="flex flex-1">Done</div>
+              <div className="flex"><CheckCircle2 color="green" /></div>
             </div>
             : <Button className="h-6 w-28" onClick={() => handleLog({ itemType, itemId })}>Mark Done</Button>
         }
@@ -131,19 +159,29 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
     );
 
   } else if (itemType === 'time') {
-    return <Button className="h-6 w-28" onClick={() => handleLog({ itemType, itemId })}>Log Time</Button>
-
+    return (
+      <div>
+        {
+          logs.today?.createdAt ? 
+            <div className="flex-row flex justify-center items-center">
+              <div className="flex flex-1">{logs.today.createdAt.toLocaleTimeString()}</div>
+              <div className="flex"><CheckCircle2 color="green" /></div>
+            </div>
+            : <Button className="h-6 w-28" onClick={() => handleLog({ itemType, itemId })}>Log Time</Button>
+        }
+      </div>
+    );
   } else if (itemType === 'amount') {
     return (
       <div className="flex flex-row w-28">
-        <div className="flex flex-1 justify-center items-center">
+        <div className="flex flex-1 items-center">
           <p>
             {
-              logs?.today?.amount ? 2 : 3
+              logs?.today?.value ?? 0
             }
           </p>
         </div>
-        <div className="flex flex-1 justify-center items-center"><Button className="h-6">Add</Button></div>
+        <div className="flex flex-1 justify-center items-center"><Button className="h-6" onClick={() => handleLog({ itemType, itemId, value: (logs.today?.value ?? 0) + 1, logId: logs.today?.logId })}>Add</Button></div>
       </div>
     );  
   }
@@ -175,7 +213,7 @@ export default function Home() {
       if (createItemsMutation.data[0]) {
         const newItem = createItemsMutation.data[0];
         const currItems = items.slice();
-        currItems.push({ ...newItem, logs: { ytd: {}, today: {} } });
+        currItems.push({ ...newItem, logs: {} });
         setItems(currItems);
       }
     } else if (createItemsMutation.isError) {
@@ -195,12 +233,12 @@ export default function Home() {
   }, [userItemsQuery.isLoading, userItemsQuery.isSuccess, userItemsQuery.data?.items]);
 
   useEffect(() => {
-    if (createLogMutation.isSuccess && createLogMutation.data[0]) {
+    if (createLogMutation.isSuccess && createLogMutation.data) {
       const currItems = items.slice();
       const mutRes = createLogMutation.data[0];
       for (let i = 0; i < currItems.length; i++) {
         const item = { ...currItems[i] } as SingleItem;
-        if (item?.itemId === mutRes.itemId && item.logs?.today && mutRes) {
+        if (item?.itemId === mutRes?.itemId && item.logs?.today && mutRes) {
           item.logs.today = mutRes;
           currItems[i] = item;
         }
@@ -259,25 +297,20 @@ export default function Home() {
     setAddItemLoading(true);
   }
 
-  const handleLog = ({ itemType, itemId, loggedSecs }: HandleLogBody) => {
+  const handleLog = ({ itemType, itemId, value, logId }: HandleLogBody) => {
     setLoading(true);
-    if (itemType === 'time' || itemType === 'consistency') {
-      createLogMutation.mutate({
-        itemType, itemId
-      });
-    } else if (itemType === 'duration') {
-      if (!loggedSecs) {
-        toast({
-          variant: "destructive",
-          title: "Missing Duration",
-          description: "There was a problem with your request.",
-        })
-      }
-      createLogMutation.mutate({
-        itemType, itemId, loggedSecs
-      });
+    if ((itemType === 'duration' || itemType === 'amount') && !value) {
+      toast({
+        variant: "destructive",
+        title: "Missing Logged Amount",
+        description: "There was a problem with your request.",
+      })
+      return;
     }
 
+    createLogMutation.mutate({
+      itemType, itemId, value, logId
+    });
   }
 
   return (
@@ -306,7 +339,9 @@ export default function Home() {
                       <div className="flex-1">{item.itemName}</div>
                       <ItemNameIcon itemType={item.itemType} />
                     </TableCell>
-                    <TableCell></TableCell>
+                    <TableCell>
+                      <ItemYtd item={item} />
+                    </TableCell>
                     <TableCell>
                       <ItemLogger item={item} handleLog={handleLog} />
                     </TableCell>

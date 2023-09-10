@@ -3,8 +3,15 @@ import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 //import ratelimit from "../rateLimiter";
-import { users, items, logs, itemsToLogsRelations } from '../../../../drizzle/schema';
+import { users, items, logs, Item, Log  } from '../../../../drizzle/schema';
 import { eq, between, gte, and } from "drizzle-orm";
+
+interface ReturnedItem extends Omit<Item, 'userId' | 'createdAt'> {
+    logs: {
+        today?: Log;
+        ytd?: Log;
+    }
+}
 
 export const userRouter = createTRPCRouter({
     fetchUserData: privateProcedure
@@ -35,26 +42,23 @@ export const userRouter = createTRPCRouter({
                 userId: false,
                 createdAt: false,
             },
+            with: {
+                logs: true
+            }
         });
 
-        // remove this and move with query above once bug resolved
-        const itemsWithLog = await Promise.all(dataQuery.map(async item => {
-            const itemLogs = await ctx.db.query.logs.findMany({
-                where: and(eq(logs.itemId, item.itemId), gte(logs.createdAt, ytdDate))
-            })
+        const itemsWithLog = dataQuery.map(item => {
+            const itemLogs = item.logs;
 
             const body = {
                 ...item,
-                logs: {
-                    ytd: {},
-                    today: {}
-                }
-            };
+                logs: {}
+            } as ReturnedItem;
 
             if (itemLogs.length > 0) {
-                for (const log of itemLogs) {
+                for (const log of item.logs) {
                     if (log.createdAt < todayDate) {
-                        body.logs.ytd = { ...log };
+                        body.logs.ytd = log;
                     } else {
                         body.logs.today = { ...log };
                     }
@@ -62,7 +66,7 @@ export const userRouter = createTRPCRouter({
             }
 
             return body;
-        }))
+        })
 
         return {
             items: itemsWithLog

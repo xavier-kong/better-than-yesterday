@@ -1,5 +1,4 @@
-import { InferModel, relations, sql } from 'drizzle-orm';
-import { boolean } from 'drizzle-orm/mysql-core';
+import { relations, sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
@@ -27,11 +26,8 @@ export const items = sqliteTable('items', {
 
 export type Item = typeof items.$inferSelect;
 
-export const itemsToLogsRelations = relations(items, ({ many }) => ({
+export const itemsRelations = relations(items, ({ many, one }) => ({
     logs: many(logs),
-}));
-
-export const itemsToUserRelations = relations(items, ({ one }) => ({
     user: one(users, {
         fields: [items.userId],
         references: [users.userId]
