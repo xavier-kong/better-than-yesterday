@@ -41,7 +41,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../components/ui/tooltip'
+} from '../components/ui/tooltip';
+import Link from 'next/link';
 
 const itemTypes = ['time', 'duration', 'amount', 'consistency'] as const;
 
@@ -106,39 +107,39 @@ function interconvertTimeString(value: number | string) {
 }
 
 function ItemDiff({ item }: { item: SingleItem }) {
-  if (!item.logs.ytd || !item.logs.today) {
-    return <div>N/A</div>;
+  if (!item.logs.today) {
+    return <div></div>;
   }
 
   if (item.itemType === 'time') {
 
   } else if (item.itemType === 'amount') {
 
-    if (!item.logs.ytd.value || !item.logs.today.value) {
+    if (!item.logs.ytd?.value || !item.logs.today.value) {
       return <div>N/A</div>;
     }
 
     const diff = item.logs.today.value - item.logs.ytd.value;
 
-    const color = (item.direction === 'increase' ? (diff > 0) : (diff < 0)) ? 'green-500' : diff === 0 ? 'white' : 'red-500';
+    const color = (item.direction === 'increase' ? (diff >= 0) : (diff <= 0)) ? 'green-500' : 'red-500';
 
-    return <div className={`text-${color}`}>{diff}</div>
+    return <div className={`text-${color} text-lg`}>{diff}</div>
 
   } else if (item.itemType === 'duration') {
 
-    if (!item.logs.ytd.value || !item.logs.today.value) {
+    if (!item.logs.ytd?.value || !item.logs.today.value) {
       return <div>N/A</div>;
     }
 
     const diff = item.logs.today.value - item.logs.ytd.value;
 
-    const color = (item.direction === 'increase' ? (diff > 0) : (diff < 0)) ? 'green-500' : diff === 0 ? 'white' : 'red-500';
+    const color = (item.direction === 'increase' ? (diff >= 0) : (diff <= 0)) ? 'green-500' : 'red-500';
 
-    return <div className={`text-${color}`}>{interconvertTimeString(Math.abs(diff))}</div>
+    return <div className={`text-${color} text-lg`}>{interconvertTimeString(Math.abs(diff))}</div>
 
   } else if (item.itemType === 'consistency') {
 
-    if (!item.logs.today.value || !item.logs.ytd.value) {
+    if (!item.logs.today.value || !item.logs.ytd?.value) {
 
     }
   }
@@ -155,19 +156,19 @@ function ItemYtd({ item }: { item: SingleItem }) {
     if (!logs.ytd.value) {
       return <div>N/A</div>;
     }
-    return <div>{interconvertTimeString(logs.ytd.value)}</div>
+    return <div className="text-lg">{interconvertTimeString(logs.ytd.value)}</div>
   } else if (itemType === 'amount') {
     if (!logs.ytd.value) {
       return <div>N/A</div>;
     }
-    return <div>{logs.ytd.value}</div>;
+    return <div className="text-lg">{logs.ytd.value}</div>;
   } else if (itemType === 'time') {
     if (!logs.ytd.createdAt) {
       return <div>N/A</div>;
     }
     return (
       <div className="flex-row flex justify-center items-center">
-        <div className="flex flex-1">{logs.ytd.createdAt.toLocaleTimeString()}</div>
+        <div className="flex flex-1 text-lg">{logs.ytd.createdAt.toLocaleTimeString()}</div>
         <div className="flex"><CheckCircle2 color="green" /></div>
       </div>
     );
@@ -177,7 +178,7 @@ function ItemYtd({ item }: { item: SingleItem }) {
     }
     return (
       <div className="flex-row flex justify-center items-center">
-        <div className="flex flex-1">Done</div>
+        <div className="flex flex-1 text-lg">Done</div>
         <div className="flex"><CheckCircle2 color="green" /></div>
       </div>
     );
@@ -199,7 +200,7 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
 
   if (itemType === 'duration') {
     return (
-      <div className='h-6'>
+      <div className='h-6 text-lg'>
         <Input type="time" value={interconvertTimeString(logDurationSecs)} 
           onBlur={() => handleLog({ itemType, itemId, value: logDurationSecs, logId: logs.today?.logId })}
           onChange={e => {
@@ -215,10 +216,10 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
         {
           logs.today && Object.keys(logs.today).length > 0 ? 
             <div className="flex-row flex justify-center items-center">
-              <div className="flex flex-1">Done</div>
+              <div className="flex flex-1 text-lg">Done</div>
               <div className="flex"><CheckCircle2 color="green" /></div>
             </div>
-            : <Button className="h-6 w-28" onClick={() => handleLog({ itemType, itemId })}>Mark Done</Button>
+            : <Button className="h-6 w-28 text-lg" onClick={() => handleLog({ itemType, itemId })}>Mark Done</Button>
         }
       </div>
     );
@@ -229,10 +230,10 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
         {
           logs.today?.createdAt ? 
             <div className="flex-row flex justify-center items-center">
-              <div className="flex flex-1">{logs.today.createdAt.toLocaleTimeString()}</div>
+              <div className="flex flex-1 text-lg">{logs.today.createdAt.toLocaleTimeString()}</div>
               <div className="flex"><CheckCircle2 color="green" /></div>
             </div>
-            : <Button className="h-6 w-28" onClick={() => handleLog({ itemType, itemId })}>Log Time</Button>
+            : <Button className="h-6 w-28 text-lg" onClick={() => handleLog({ itemType, itemId })}>Log Time</Button>
         }
       </div>
     );
@@ -240,13 +241,13 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
     return (
       <div className="flex flex-row w-28">
         <div className="flex flex-1 items-center">
-          <p>
+          <p className="text-lg">
             {
               logs?.today?.value ?? 0
             }
           </p>
         </div>
-        <div className="flex flex-1 justify-center items-center"><Button className="h-6" onClick={() => handleLog({ itemType, itemId, value: (logs.today?.value ?? 0) + 1, logId: logs.today?.logId })}>Add</Button></div>
+        <div className="flex flex-1 justify-center items-center"><Button className="h-6 text-lg" onClick={() => handleLog({ itemType, itemId, value: (logs.today?.value ?? 0) + 1, logId: logs.today?.logId })}>Add</Button></div>
       </div>
     );  
   }
@@ -389,22 +390,24 @@ export default function Home() {
         <div className="p-5">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-40">Item</TableHead>
-                <TableHead className="w-36">Yesterday</TableHead>
-                <TableHead className="w-36">Today</TableHead>
-                <TableHead className="text-right">Difference</TableHead>
+              <TableRow className="text-xl">
+                <TableHead className="w-48">Item</TableHead>
+                <TableHead className="w-40">Yesterday</TableHead>
+                <TableHead className="w-40">Today</TableHead>
+                <TableHead className="text-right w-40">Difference</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {
                 items?.map((item) => (
-                  <TableRow key={item.itemId}>
-                    <TableCell className="flex flex-row gap-4">
-                      <div className="flex-1">{item.itemName}</div>
+                  <TableRow key={item.itemId} className="h-24 flex-row">
+                    <TableCell className="flex flex-row gap-4 align-middle">
+                      <Link href={`/item/${item.itemId}`} className="flex-1 align-middle">
+                        <div className="flex-1 hover:underline text-lg">{item.itemName}</div>
+                      </Link>
                       <ItemNameIcon itemType={item.itemType} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="">
                       <ItemYtd item={item} />
                     </TableCell>
                     <TableCell>
