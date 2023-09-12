@@ -295,6 +295,8 @@ export default function Home() {
       setLoading(false);
       const userItems = userItemsQuery.data.items;
       setItems(userItems);
+    } else {
+      setLoading(false);
     }
   }, [userItemsQuery.isLoading, userItemsQuery.isSuccess, userItemsQuery.data?.items]);
 
