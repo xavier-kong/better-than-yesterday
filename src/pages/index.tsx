@@ -403,7 +403,7 @@ export default function Home() {
               {
                 items?.map((item) => (
                   <TableRow key={item.itemId} className="h-24 flex-row">
-                    <TableCell className="flex flex-row gap-4 align-middle">
+                    <TableCell className="flex flex-row gap-4 h-24 items-center">
                       <Link href={`/item/${item.itemId}`} className="flex-1 align-middle">
                         <div className="flex-1 hover:underline text-lg">{item.itemName}</div>
                       </Link>
@@ -432,7 +432,7 @@ export default function Home() {
             setAddItemDialogOpen(!addItemDialogOpen)
           }}>
             <DialogTrigger asChild>
-              <Button variant="outline">Add Item</Button>
+              <Button variant="outline" className="text-lg">Add Item</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
