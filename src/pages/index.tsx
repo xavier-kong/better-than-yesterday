@@ -219,7 +219,7 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
               <div className="flex flex-1 text-lg">Done</div>
               <div className="flex"><CheckCircle2 color="green" /></div>
             </div>
-            : <Button className="h-6 w-28 text-lg" onClick={() => handleLog({ itemType, itemId })}>Mark Done</Button>
+            : <Button className="text-lg" onClick={() => handleLog({ itemType, itemId })}>Mark Done</Button>
         }
       </div>
     );
@@ -233,7 +233,7 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
               <div className="flex flex-1 text-lg">{logs.today.createdAt.toLocaleTimeString()}</div>
               <div className="flex"><CheckCircle2 color="green" /></div>
             </div>
-            : <Button className="h-6 w-28 text-lg" onClick={() => handleLog({ itemType, itemId })}>Log Time</Button>
+            : <Button className="text-lg" onClick={() => handleLog({ itemType, itemId })}>Log Time</Button>
         }
       </div>
     );
@@ -247,7 +247,7 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
             }
           </p>
         </div>
-        <div className="flex flex-1 justify-center items-center"><Button className="h-6 text-lg" onClick={() => handleLog({ itemType, itemId, value: (logs.today?.value ?? 0) + 1, logId: logs.today?.logId })}>Add</Button></div>
+        <div className="flex flex-1 justify-center items-center"><Button className="text-lg" onClick={() => handleLog({ itemType, itemId, value: (logs.today?.value ?? 0) + 1, logId: logs.today?.logId })}>Add</Button></div>
       </div>
     );  
   }
@@ -434,37 +434,36 @@ export default function Home() {
             <DialogTrigger asChild>
               <Button variant="outline" className="text-lg">Add Item</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Add Item</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-xl">Add Item</DialogTitle>
+                <DialogDescription className="text-lg">
                   Add a new item. Click save.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
-
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
+                  <Label htmlFor="name" className="text-right text-lg">
                     Name
                   </Label>
                   <Input id="name" value={formItemName} onChange={(e) => setFormItemName(e.currentTarget.value)} className="col-span-3" />
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="type" className="text-right">
+                  <Label htmlFor="type" className="text-right text-lg">
                     Type
                   </Label>
                   <Select 
                     value={selectedItemType} 
                     onValueChange={(val: ItemType) => setSelectedItemType(val)}
                   >
-                    <SelectTrigger className="col-span-3">
+                    <SelectTrigger className="col-span-3 text-lg">
                       <SelectValue placeholder="Select a type" />
                     </SelectTrigger>
                     <SelectContent>
                       {
                         itemTypes.map((itemType: ItemType) => (
-                          <SelectItem value={itemType} key={itemType} className="capitalize">
+                          <SelectItem value={itemType} key={itemType} className="capitalize text-lg">
                             {capitalize(itemType)}
                           </SelectItem>
                         ))
@@ -484,7 +483,7 @@ export default function Home() {
                           directions.map((dir) => (
                             <div className="flex items-center space-x-2" key={dir} onSelect={() => setSelectedDirection(dir)}>
                               <RadioGroupItem value={dir} id={dir} />
-                              <Label htmlFor={dir} className="capitalize">{dir}</Label>
+                              <Label htmlFor={dir} className="capitalize text-lg">{dir}</Label>
                             </div>
                           ))
                         }
@@ -498,7 +497,7 @@ export default function Home() {
                   <div>
                     <p className="text-red-500">{addItemError}</p>
                   </div>
-                  <Button type="submit" onClick={() => handleAddItem()} className="justify-center" disabled={addItemLoading}>
+                  <Button type="submit" onClick={() => handleAddItem()} className="justify-center text-lg" disabled={addItemLoading}>
                     {addItemLoading ? <Spinner /> : 'Add'}
                   </Button>
                 </div>
