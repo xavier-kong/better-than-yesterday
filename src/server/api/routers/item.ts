@@ -25,5 +25,25 @@ export const itemRouter = createTRPCRouter({
             direction: items.direction 
         });
         return res;
+    }),
+    fetchItemDetails: privateProcedure
+    .input(z.object({ itemId: z.number(), userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+        if (input.userId !== ctx.userId) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Not user' });
+        }
+
+        const res = await ctx.db.query.items.findFirst({
+            where: eq(items.itemId, input.itemId),
+            with: {
+                logs: true
+            }
+        });
+
+        if (!res) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: 'No item' });
+        }
+
+        return res;
     })
 });
