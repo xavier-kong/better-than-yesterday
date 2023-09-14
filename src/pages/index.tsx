@@ -27,7 +27,6 @@ import { useToast } from "~/components/ui/use-toast";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,

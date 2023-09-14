@@ -1,10 +1,8 @@
-import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 import { clerkClient } from "@clerk/nextjs/server";
-import { TRPCError } from "@trpc/server";
 //import ratelimit from "../rateLimiter";
-import { users, items, logs, Item, Log  } from '../../../../drizzle/schema';
-import { eq, between, gte, and } from "drizzle-orm";
+import { users, items, Item, Log  } from '../../../../drizzle/schema';
+import { eq } from "drizzle-orm";
 
 interface ReturnedItem extends Omit<Item, 'userId' | 'createdAt'> {
     logs: {

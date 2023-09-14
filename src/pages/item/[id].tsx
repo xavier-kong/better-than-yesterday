@@ -1,6 +1,5 @@
 import { useAuth, SignIn } from "@clerk/nextjs";
 import { useRouter } from 'next/router';
-import { useEffect } from "react";
 import Spinner from '~/components/Spinner';
 import { api } from "~/utils/api";
 
