@@ -21,7 +21,8 @@ export const items = sqliteTable('items', {
     itemType: text('item_type', { enum: ['time', 'duration', 'amount', 'consistency']}).notNull(),
     itemName: text('item_name').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-    direction: text('direction', { enum: ['increase', 'decrease']})
+    direction: text('direction', { enum: ['increase', 'decrease']}),
+    deleted: integer('deleted', { mode: 'boolean' }).notNull().default(sql`1`)
 });
 
 export type Item = typeof items.$inferSelect;

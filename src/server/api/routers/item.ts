@@ -3,7 +3,7 @@ import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 //import ratelimit from "../rateLimiter";
 import { items } from '../../../../drizzle/schema';
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const itemTypes = ['time', 'duration', 'amount', 'consistency'] as const;
 
@@ -16,7 +16,8 @@ export const itemRouter = createTRPCRouter({
             itemType: input.itemType,
             itemName: input.itemName,
             direction: input.direction,
-            createdAt: new Date()
+            createdAt: new Date(),
+            deleted: false
         }).returning({ 
             itemId: items.itemId, 
             itemName: items.itemName,
@@ -26,14 +27,12 @@ export const itemRouter = createTRPCRouter({
         return res;
     }),
     fetchItemDetails: privateProcedure
-    .input(z.object({ itemId: z.number(), userId: z.string() }))
+    .input(z.object({ itemId: z.number() }))
     .query(async ({ ctx, input }) => {
-        if (input.userId !== ctx.userId) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Not user' });
-        }
-
         const res = await ctx.db.query.items.findFirst({
-            where: eq(items.itemId, input.itemId),
+            where: (
+                and(eq(items.itemId, input.itemId), eq(items.userId, ctx.userId))
+            ),
             with: {
                 logs: true
             }
@@ -42,6 +41,22 @@ export const itemRouter = createTRPCRouter({
         if (!res) {
             throw new TRPCError({ code: 'NOT_FOUND', message: 'No item' });
         }
+
+        return res;
+    }),
+    deleteItem: privateProcedure
+    .input(z.object({ itemId: z.number(), userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+        if (input.userId !== ctx.userId) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Not user' });
+        }
+
+        const res = await ctx.db.update(items)
+            .set({ deleted: true })
+            .where(eq(items.itemId, input.itemId))
+            .returning({
+                deleted: items.deleted
+            });
 
         return res;
     })

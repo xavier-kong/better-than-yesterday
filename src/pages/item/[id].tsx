@@ -1,31 +1,40 @@
+'use client'
+
 import { useAuth, SignIn } from "@clerk/nextjs";
 import { useRouter } from 'next/router';
+import { useEffect, useState } from "react";
 import Spinner from '~/components/Spinner';
+import { Button } from "~/components/ui/button";
 import { api } from "~/utils/api";
 
 export default function ItemPage() {
     const router = useRouter();
     const { isLoaded, isSignedIn, userId } = useAuth();
+    const [loading, setLoading] = useState<boolean>(false);
+    const deleteItemMutation = api.item.deleteItem.useMutation();
+    const fetchItemQuery = api.item.fetchItemDetails.useQuery({
+        itemId: parseInt(router?.query?.id?.[0] ?? '-1'),
+    });
 
-    if (!isLoaded) {
-        return <Spinner />;
-    }
-
-    if (!isSignedIn || !userId) {
-        return (<div className="flex min-h-screen items-center justify-center"><SignIn /></div>)
+    const goBackHome = async() => {
+        await router.replace('/');
     }
 
     if (!router?.query?.id?.[0]) {
         return <div>404 Not Found Or something</div>;
     }
 
-    const fetchItemQuery = api.item.fetchItemDetails.useQuery({
-        itemId: parseInt(router.query.id[0]),
-        userId: userId
-    });
+    if (deleteItemMutation.isSuccess) {
+        //setLoading(false);
+        void goBackHome();
+    }
 
-    if (fetchItemQuery.isLoading) {
+    if (!isLoaded || loading || fetchItemQuery.isLoading) {
         return <Spinner />;
+    }
+
+    if (!isSignedIn || !userId) {
+        return (<div className="flex min-h-screen items-center justify-center"><SignIn /></div>)
     }
 
     if (fetchItemQuery.isError) {
@@ -34,19 +43,27 @@ export default function ItemPage() {
 
     const itemData = fetchItemQuery.data;
 
-    if (itemData.itemType === 'time') {
-
-    } else if (itemData.itemType === 'amount') {
-
-    } else if (itemData.itemType === 'duration') {
-
-    } else if (itemData.itemType === 'consistency') {
-        
+    if (!itemData) {
+        void goBackHome();
     }
 
     return ( 
         <div>
-            {router.query.id.length}
+            <Button 
+                type="submit" 
+                onClick={() => {
+                    if (router?.query?.id?.[0]) {
+                        setLoading(true)
+                        deleteItemMutation.mutate({
+                            itemId: parseInt(router.query.id[0]!),
+                            userId
+                })
+                }
+                }}
+            >
+                DELETE
+            </Button>
+            {JSON.stringify(itemData)}
         </div>
     )
 }

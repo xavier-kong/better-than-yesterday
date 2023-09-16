@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useAuth, SignIn } from "@clerk/nextjs";
+import { useAuth, SignIn, UserButton } from "@clerk/nextjs";
 import { api } from "~/utils/api";
 import Spinner from "../components/Spinner";
 import {
@@ -278,7 +278,7 @@ export default function Home() {
       if (createItemsMutation.data[0]) {
         const newItem = createItemsMutation.data[0];
         const currItems = items.slice();
-        currItems.push({ ...newItem, logs: {} });
+        currItems.push({ ...newItem, logs: {}, deleted: false });
         setItems(currItems);
       }
     } else if (createItemsMutation.isError) {
@@ -388,6 +388,9 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex min-h-screen items-center justify-center flex-col">
+        <div className="absolute right-0 top-0 pt-5 pr-10">
+          <UserButton />
+        </div>
         <div className="p-5">
           <Table>
             <TableHeader>
@@ -400,11 +403,11 @@ export default function Home() {
             </TableHeader>
             <TableBody>
               {
-                items?.map((item) => (
+                items?.filter(item => !item.deleted).map((item) => (
                   <TableRow key={item.itemId} className="h-24 flex-row">
                     <TableCell className="flex flex-row gap-4 h-24 items-center">
                       <Link href={`/item/${item.itemId}`} className="flex-1 align-middle">
-                        <div className="flex-1 hover:underline text-lg">{item.itemName}</div>
+                        <div className="hover:underline text-lg">{item.itemName}</div>
                       </Link>
                       <ItemNameIcon itemType={item.itemType} />
                     </TableCell>

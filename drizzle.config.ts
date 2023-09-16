@@ -13,5 +13,6 @@ export default {
     dbCredentials: {
         authToken: process.env.DATABASE_AUTH_TOKEN,
         url: process.env.DATABASE_URL,
-    }
+    },
+    verbose: true
 } satisfies Config;
