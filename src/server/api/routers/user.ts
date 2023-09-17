@@ -55,9 +55,9 @@ export const userRouter = createTRPCRouter({
 
             if (itemLogs.length > 0) {
                 for (const log of item.logs) {
-                    if (log.createdAt < todayDate) {
+                    if (log.createdAt < todayDate && log.createdAt >= ytdDate) {
                         body.logs.ytd = log;
-                    } else {
+                    } else if (log.createdAt >= todayDate) {
                         body.logs.today = { ...log };
                     }
                 }
