@@ -262,7 +262,7 @@ export default function Home() {
   const [addItemLoading, setAddItemLoading] = useState<boolean>(false);
   const [items, setItems] = useState<Items>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const userItemsQuery = api.user.fetchUserData.useQuery();
+  const userItemsQuery = api.user.fetchUserData.useQuery({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
   const createItemsMutation = api.item.createItem.useMutation();
   const createLogMutation = api.log.createItemLog.useMutation();
   const { toast } = useToast();
@@ -432,7 +432,7 @@ export default function Home() {
               clearFields();
             }
             setAddItemDialogOpen(!addItemDialogOpen)
-          }}>
+            }}>
             <DialogTrigger asChild>
               <Button variant="outline" className="text-lg">Add Item</Button>
             </DialogTrigger>
