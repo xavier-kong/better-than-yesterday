@@ -199,14 +199,18 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
 
   if (itemType === 'duration') {
     return (
-      <div className='h-6 text-lg'>
-        <Input type="time" value={interconvertTimeString(logDurationSecs)} 
+      <div className='h-6 text-lg flex flex-row'>
+        <Input type="number" className="border-b border-t-0 border-l-0 border-r-0 border-white rounded-none w-12 h-7 mx-3"/>
+        <p>H</p>
+        <Input type="number" className="border-b border-t-0 border-l-0 border-r-0 border-white rounded-none w-12 h-7 mx-3"/>
+        <p>M</p>
+        {/*<Input type="time" value={interconvertTimeString(logDurationSecs)} 
           onBlur={() => handleLog({ itemType, itemId, value: logDurationSecs, logId: logs.today?.logId })}
           onChange={e => {
             const timeStr = e.currentTarget.value;
             const secs = interconvertTimeString(timeStr) as number;
             setLogDurationSecs(secs);
-          }} />
+          }} />*/}
       </div>
     )
   } else if (itemType === 'consistency') {
@@ -432,7 +436,7 @@ export default function Home() {
               clearFields();
             }
             setAddItemDialogOpen(!addItemDialogOpen)
-            }}>
+          }}>
             <DialogTrigger asChild>
               <Button variant="outline" className="text-lg">Add Item</Button>
             </DialogTrigger>
