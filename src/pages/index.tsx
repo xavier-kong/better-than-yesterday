@@ -34,7 +34,7 @@ import {
 } from "../components/ui/table"
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "~/server/api/root";
-import { ClockIcon, Crosshair, TimerIcon, TargetIcon, CheckCircle2 } from "lucide-react";
+import { ClockIcon, Crosshair, TimerIcon, TargetIcon, CheckCircle2, MoveRightIcon } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -186,13 +186,19 @@ function ItemYtd({ item }: { item: SingleItem }) {
 }
 
 function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: HandleLogBody) => void; }) {
-  const [logDurationSecs, setLogDurationSecs] = useState<number>(0);
+  const [logDurationHours, setLogDurationHours] = useState<number>(0);
+  const [logDurationMins, setLogDurationMins] = useState<number>(0);
   const { itemType, itemId, logs } = item;
+  const { toast } = useToast();
 
   useEffect(() => {
     if (itemType === 'duration') {
       if (logs.today?.value) {
-        setLogDurationSecs(logs.today.value);
+        const totalMinutes = Math.floor(logs.today.value / 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        setLogDurationHours(hours);
+        setLogDurationMins(minutes);
       } 
     }
   }, [logs.today?.value]);
@@ -200,17 +206,60 @@ function ItemLogger({ item, handleLog }: {item: SingleItem; handleLog: (body: Ha
   if (itemType === 'duration') {
     return (
       <div className='h-6 text-lg flex flex-row'>
-        <Input type="number" className="border-b border-t-0 border-l-0 border-r-0 border-white rounded-none w-12 h-7 mx-3"/>
+        <Input 
+          value={logDurationHours} 
+          onChange={e => setLogDurationHours(parseInt(e.currentTarget.value))}
+          type="number" 
+          className="border-b border-t-0 border-l-0 border-r-0 border-white rounded-none w-12 h-7 mx-3"
+        />
         <p>H</p>
-        <Input type="number" className="border-b border-t-0 border-l-0 border-r-0 border-white rounded-none w-12 h-7 mx-3"/>
+        <Input 
+          value={logDurationMins} 
+          onChange={e => setLogDurationMins(parseInt(e.currentTarget.value))}
+          type="number" 
+          className="border-b border-t-0 border-l-0 border-r-0 border-white rounded-none w-12 h-7 mx-3"/>
         <p>M</p>
-        {/*<Input type="time" value={interconvertTimeString(logDurationSecs)} 
-          onBlur={() => handleLog({ itemType, itemId, value: logDurationSecs, logId: logs.today?.logId })}
-          onChange={e => {
-            const timeStr = e.currentTarget.value;
-            const secs = interconvertTimeString(timeStr) as number;
-            setLogDurationSecs(secs);
-          }} />*/}
+        <Button className="mx-3 h-7" onClick={() => {
+          if (logDurationHours > 24) {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Hour value cannot be greater than 23",
+            });
+            return;
+          }
+
+          if (logDurationMins > 60) {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Minute value cannot be greater than 59",
+            });
+            return;
+          }
+
+          const loggedSecs =  ((logDurationHours * 60) + logDurationMins) * 60;
+
+          if (logs?.today?.value) {
+            if (loggedSecs === logs.today.value) {
+              return;
+            }
+
+            if (loggedSecs < logs.today.value) {
+              toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Logged value cannot be less than the existing one.",
+              });
+              return;
+            }
+          }
+
+          handleLog({ itemType, itemId, value: loggedSecs, logId: logs.today?.logId })
+
+        }}>
+          <MoveRightIcon />
+        </Button>
       </div>
     )
   } else if (itemType === 'consistency') {
